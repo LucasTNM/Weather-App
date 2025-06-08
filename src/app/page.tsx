@@ -1,103 +1,183 @@
-import Image from "next/image";
+"use client"
 
-export default function Home() {
+import type React from "react"
+
+import { useState } from "react"
+import { Search, Cloud, CloudRain, Sun, CloudDrizzle, Haze, Wind, Droplets, AlertCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent } from "@/components/ui/card"
+
+interface WeatherData {
+  name: string
+  main: {
+    temp: number
+    humidity: number
+  }
+  wind: {
+    speed: number
+  }
+  weather: Array<{
+    main: string
+    description: string
+  }>
+}
+
+export default function WeatherApp() {
+  const [city, setCity] = useState("")
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  const apiKey = process.env.apiKey || "";
+  const apiUrl = process.env.apiUrl || "";
+
+  const getWeatherIcon = (weatherMain: string) => {
+    switch (weatherMain) {
+      case "Clouds":
+        return <Cloud className="w-24 h-24 text-gray-600" />
+      case "Rain":
+        return <CloudRain className="w-24 h-24 text-blue-600" />
+      case "Clear":
+        return <Sun className="w-24 h-24 text-yellow-500" />
+      case "Drizzle":
+        return <CloudDrizzle className="w-24 h-24 text-blue-400" />
+      case "Mist":
+        return <Haze className="w-24 h-24 text-gray-500" />
+      default:
+        return <Cloud className="w-24 h-24 text-gray-600" />
+    }
+  }
+
+  const checkWeather = async (cityName: string) => {
+    if (!cityName.trim()) {
+      setError("Please enter a city name")
+      return
+    }
+
+    setLoading(true)
+    setError("")
+
+    try {
+      const response = await fetch(apiUrl + cityName + `&appid=${apiKey}`)
+
+      if (response.status === 404) {
+        setError("City not found. Please check the spelling and try again.")
+        setWeatherData(null)
+      } else if (!response.ok) {
+        throw new Error("Weather data not available")
+      } else {
+        const data: WeatherData = await response.json()
+        setWeatherData(data)
+        setError("")
+      }
+    } catch (error) {
+      console.error(error)
+      setError("City not found or missing data")
+      setWeatherData(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSearch = () => {
+    checkWeather(city)
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch()
+    }
+  }
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md mx-auto shadow-2xl">
+        <CardContent className="p-6">
+          <div className="text-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Weather App</h1>
+            <p className="text-gray-600">Get current weather information</p>
+          </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+          {/* Search Section */}
+          <div className="flex gap-2 mb-6">
+            <Input
+              type="text"
+              placeholder="Enter city name..."
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="flex-1"
+              disabled={loading}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            <Button onClick={handleSearch} disabled={loading} size="icon">
+              <Search className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* Loading State */}
+          {loading && (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+              <p className="text-gray-600 mt-2">Loading weather data...</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+                <p className="text-red-700">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Weather Data */}
+          {weatherData && !loading && (
+            <div className="text-center space-y-6">
+              {/* City Name */}
+              <h2 className="text-2xl font-bold text-gray-800">{weatherData.name}</h2>
+
+              {/* Weather Icon */}
+              <div className="flex justify-center">{getWeatherIcon(weatherData.weather[0].main)}</div>
+
+              {/* Temperature */}
+              <div className="text-5xl font-bold text-gray-800">{Math.round(weatherData.main.temp)}°C</div>
+
+              {/* Weather Description */}
+              <p className="text-lg text-gray-600 capitalize">{weatherData.weather[0].description}</p>
+
+              {/* Weather Details */}
+              <div className="grid grid-cols-2 gap-4 mt-6">
+                <div className="bg-blue-50 rounded-lg p-4">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Droplets className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-medium text-gray-600">Humidity</span>
+                  </div>
+                  <p className="text-xl font-bold text-gray-800">{weatherData.main.humidity}%</p>
+                </div>
+
+                <div className="bg-green-50 rounded-lg p-4">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <Wind className="w-5 h-5 text-green-600" />
+                    <span className="text-sm font-medium text-gray-600">Wind Speed</span>
+                  </div>
+                  <p className="text-xl font-bold text-gray-800">{weatherData.wind.speed} km/h</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Initial State */}
+          {!weatherData && !loading && !error && (
+            <div className="text-center py-8">
+              <Cloud className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600">Enter a city name to get weather information</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
-  );
+  )
 }
