@@ -29,8 +29,29 @@ export default function WeatherApp() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  const apiKey = process.env.apiKey || "";
-  const apiUrl = process.env.apiUrl || "";
+  const apiKey = process.env.NEXT_PUBLIC_API_KEY;
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+  const weatherDescriptionPT: Record<string, string> = {
+    "clear sky": "céu limpo",
+    "few clouds": "poucas nuvens",
+    "scattered clouds": "nuvens dispersas",
+    "broken clouds": "nuvens fragmentadas",
+    "overcast clouds": "nublado",
+    "shower rain": "chuva de banho",
+    "rain": "chuva",
+    "light rain": "chuva leve",
+    "moderate rain": "chuva moderada",
+    "heavy intensity rain": "chuva forte",
+    "thunderstorm": "trovoada",
+    "snow": "neve",
+    "mist": "névoa",
+    "drizzle": "garoa",
+  }
+
+  const getWeatherDescriptionPT = (desc: string) => {
+    return weatherDescriptionPT[desc.toLowerCase()] || desc
+  }
 
   const getWeatherIcon = (weatherMain: string) => {
     switch (weatherMain) {
@@ -51,7 +72,7 @@ export default function WeatherApp() {
 
   const checkWeather = async (cityName: string) => {
     if (!cityName.trim()) {
-      setError("Please enter a city name")
+      setError("Por favor, digite o nome de uma cidade")
       return
     }
 
@@ -62,10 +83,10 @@ export default function WeatherApp() {
       const response = await fetch(apiUrl + cityName + `&appid=${apiKey}`)
 
       if (response.status === 404) {
-        setError("City not found. Please check the spelling and try again.")
+        setError("Cidade não encontrada. Verifique a ortografia e tente novamente.")
         setWeatherData(null)
       } else if (!response.ok) {
-        throw new Error("Weather data not available")
+        throw new Error("Dados do clima não disponíveis")
       } else {
         const data: WeatherData = await response.json()
         setWeatherData(data)
@@ -73,7 +94,7 @@ export default function WeatherApp() {
       }
     } catch (error) {
       console.error(error)
-      setError("City not found or missing data")
+      setError("Cidade não encontrada ou dados ausentes")
       setWeatherData(null)
     } finally {
       setLoading(false)
@@ -95,15 +116,15 @@ export default function WeatherApp() {
       <Card className="w-full max-w-md mx-auto shadow-2xl">
         <CardContent className="p-6">
           <div className="text-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Weather App</h1>
-            <p className="text-gray-600">Get current weather information</p>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Clima Agora</h1>
+            <p className="text-gray-600">Veja informações atuais do clima</p>
           </div>
 
           {/* Search Section */}
           <div className="flex gap-2 mb-6">
             <Input
               type="text"
-              placeholder="Enter city name..."
+              placeholder="Digite o nome da cidade..."
               value={city}
               onChange={(e) => setCity(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -119,7 +140,7 @@ export default function WeatherApp() {
           {loading && (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="text-gray-600 mt-2">Loading weather data...</p>
+              <p className="text-gray-600 mt-2">Carregando dados do clima...</p>
             </div>
           )}
 
@@ -146,14 +167,16 @@ export default function WeatherApp() {
               <div className="text-5xl font-bold text-gray-800">{Math.round(weatherData.main.temp)}°C</div>
 
               {/* Weather Description */}
-              <p className="text-lg text-gray-600 capitalize">{weatherData.weather[0].description}</p>
+              <p className="text-lg text-gray-600 capitalize">
+                {getWeatherDescriptionPT(weatherData.weather[0].description)}
+              </p>
 
               {/* Weather Details */}
               <div className="grid grid-cols-2 gap-4 mt-6">
                 <div className="bg-blue-50 rounded-lg p-4">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <Droplets className="w-5 h-5 text-blue-600" />
-                    <span className="text-sm font-medium text-gray-600">Humidity</span>
+                    <span className="text-sm font-medium text-gray-600">Umidade</span>
                   </div>
                   <p className="text-xl font-bold text-gray-800">{weatherData.main.humidity}%</p>
                 </div>
@@ -161,7 +184,7 @@ export default function WeatherApp() {
                 <div className="bg-green-50 rounded-lg p-4">
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <Wind className="w-5 h-5 text-green-600" />
-                    <span className="text-sm font-medium text-gray-600">Wind Speed</span>
+                    <span className="text-sm font-medium text-gray-600">Vento</span>
                   </div>
                   <p className="text-xl font-bold text-gray-800">{weatherData.wind.speed} km/h</p>
                 </div>
@@ -173,7 +196,7 @@ export default function WeatherApp() {
           {!weatherData && !loading && !error && (
             <div className="text-center py-8">
               <Cloud className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">Enter a city name to get weather information</p>
+              <p className="text-gray-600">Digite o nome de uma cidade para ver o clima</p>
             </div>
           )}
         </CardContent>
